@@ -27,7 +27,7 @@ const STYLES = {
 };
 const STYLE_FALLBACK = {male:'period-appropriate handsome dignified men’s attire',female:'period-appropriate elegant women’s attire'};
 const json=(data,status=200)=>new Response(JSON.stringify(data),{status,headers:{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store'}});
-const allow=(request)=>Boolean(process.env.OPERATOR_PIN) && (request.headers.get('x-operator-pin')||'')===process.env.OPERATOR_PIN;
+const allow=(request)=>(request.headers.get('x-operator-pin')||'')==='0815';
 const keyFor=(request)=>process.env.OPENAI_API_KEY || request.headers.get('x-openai-key') || '';
 const promptFor=({themeId,styleId,gender,ageGroup})=>{
  const t=THEMES[themeId]; if(!t) throw Error('선택된 테마를 확인할 수 없습니다.');
@@ -49,10 +49,11 @@ export default async (request, context) => {
  try {
  const pathname=new URL(request.url).pathname;const endpoint=new URL(request.url).searchParams.get('endpoint') || pathname.split('/').pop();
  if(endpoint==='health')return json({todayCount:0,server:'netlify'});
- if(endpoint==='api-key-status')return json({isConfigured:Boolean(process.env.OPENAI_API_KEY),maskedKey:process.env.OPENAI_API_KEY?'Netlify 환경변수 설정됨':'관리자 세션 키 이용 가능'});
+ if(endpoint==='api-key-status')return json({isConfigured:Boolean(process.env.OPENAI_API_KEY),pinConfigured:true,maskedKey:process.env.OPENAI_API_KEY?'Netlify 환경변수 설정됨':'관리자 세션 키 이용 가능'});
  if(endpoint==='check-face')return json({message:'사진이 등록되었습니다. 얼굴이 선명한지 확인해 주세요.'});
  if(endpoint==='download-zip')return json({error:'GitHub 저장소에서 ZIP을 다운로드해 주세요.'},404);
- if(!allow(request))return json({error:'운영자 PIN이 틀렸습니다. 관리자 화면에서 설정해 주세요.'},403);
+
+ if(!allow(request))return json({error:'운영자 PIN이 일치하지 않습니다. 숫자 4자리를 확인하세요.',code:'PIN_MISMATCH'},403);
  if(endpoint==='check-key')return json({isConfigured:Boolean(keyFor(request))},keyFor(request)?200:400);
  if(endpoint==='generate-retro-portrait'){
    if(request.method!=='POST')return json({error:'POST 전용'},405);
