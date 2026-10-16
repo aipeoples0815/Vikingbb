@@ -47,7 +47,7 @@ async function openaiEdit(request,data){
 }
 export default async (request, context) => {
  try {
- const pathname=new URL(request.url).pathname;const endpoint=pathname.split('/').pop();
+ const pathname=new URL(request.url).pathname;const endpoint=new URL(request.url).searchParams.get('endpoint') || pathname.split('/').pop();
  if(endpoint==='health')return json({todayCount:0,server:'netlify'});
  if(endpoint==='api-key-status')return json({isConfigured:Boolean(process.env.OPENAI_API_KEY),maskedKey:process.env.OPENAI_API_KEY?'Netlify 환경변수 설정됨':'관리자 세션 키 이용 가능'});
  if(endpoint==='check-face')return json({message:'사진이 등록되었습니다. 얼굴이 선명한지 확인해 주세요.'});
@@ -61,4 +61,4 @@ export default async (request, context) => {
  return json({error:'지원되지 않는 경로입니다.'},404);
  }catch(error){return json({error:error?.name==='TimeoutError'?'이미지 생성 시간이 너무 길어졌습니다. 재시도해 주세요.':String(error?.message||error).slice(0,250)},500)}
 };
-export const config={path:'/api/*'};
+
