@@ -101,80 +101,6 @@ export const App: React.FC = () => {
     }));
   };
 
-  // Apply consistent, exact Korean brand lettering after the AI portrait is generated.
-  // This intentionally affects only the craft-beer advertising theme.
-  // Brand copy is typeset with Canvas for accurate Korean text and no opaque boxes.
-  const addBeerBranding = async (imageUrl: string): Promise<string> => {
-    return new Promise((resolve) => {
-      const photo = new Image();
-      photo.onload = () => {
-        try {
-          const canvas = document.createElement('canvas');
-          canvas.width = photo.naturalWidth;
-          canvas.height = photo.naturalHeight;
-          const ctx = canvas.getContext('2d');
-          if (!ctx) { resolve(imageUrl); return; }
-          const w = canvas.width, h = canvas.height;
-          const sx = w / 1000;
-          ctx.drawImage(photo, 0, 0, w, h);
-          ctx.save();
-          // No solid backgrounds or opaque badges: the customer's portrait remains visible.
-          // Mild, soft darkening at far left only improves type contrast on brewery scenery.
-          const shade = ctx.createLinearGradient(0, 0, w * 0.42, 0);
-          shade.addColorStop(0, 'rgba(12, 14, 20, 0.24)');
-          shade.addColorStop(0.65, 'rgba(12, 14, 20, 0.09)');
-          shade.addColorStop(1, 'rgba(12, 14, 20, 0)');
-          ctx.fillStyle = shade;
-          ctx.fillRect(0, 0, w * 0.42, h);
-
-          const ink = (color: string, font: string, strokeWidth = 2) => {
-            ctx.fillStyle = color;
-            ctx.font = font;
-            ctx.lineJoin = 'round';
-            ctx.strokeStyle = 'rgba(26, 19, 13, 0.53)';
-            ctx.lineWidth = strokeWidth * sx;
-            ctx.shadowColor = 'rgba(0,0,0,0.60)';
-            ctx.shadowBlur = 7 * sx;
-            ctx.shadowOffsetY = 2 * sx;
-          };
-          const write = (text: string, x: number, y: number, width: number) => {
-            ctx.strokeText(text, x * sx, y * sx, width * sx);
-            ctx.fillText(text, x * sx, y * sx, width * sx);
-          };
-          ctx.textAlign = 'left';
-          ctx.textBaseline = 'top';
-          // Compact editorial brand lockup at far left, inspired by festival poster reference.
-          ink('#fffdf6', `900 ${55*sx}px Georgia, serif`, 2.5);
-          write('VIKING', 35, 43, 315);
-          ink('#ffda7a', `bold ${23*sx}px Arial, sans-serif`, 1.3);
-          write('CRAFT BEER', 43, 111, 240);
-          ctx.save();
-          ctx.translate(39*sx, 200*sx);
-          ctx.rotate(-0.09);
-          ink('#fffaf1', `900 ${65*sx}px "Malgun Gothic", "Apple SD Gothic Neo", sans-serif`, 2.2);
-          ctx.strokeText('조타카이', 0, 0, 315*sx);
-          ctx.fillText('조타카이', 0, 0, 315*sx);
-          ctx.restore();
-          ink('#ffd27a', `bold ${30*sx}px Arial, sans-serif`, 1.5);
-          write('JOTAKAI', 55, 287, 265);
-          // Small festival slogan at lower left. Never place a banner over the face.
-          ink('#fffaf0', `900 ${34*sx}px "Malgun Gothic", "Apple SD Gothic Neo", sans-serif`, 2);
-          const baseY = h / sx - 137;
-          write('지금, 조타카이로', 37, baseY, 365);
-          ink('#ffda7a', `900 ${49*sx}px "Malgun Gothic", "Apple SD Gothic Neo", sans-serif`, 2);
-          write('건배!', 39, baseY + 44, 245);
-          ctx.restore();
-          resolve(canvas.toDataURL('image/jpeg', 0.94));
-        } catch (error) {
-          console.warn('Brand lettering overlay failed:', error);
-          resolve(imageUrl);
-        }
-      };
-      photo.onerror = () => resolve(imageUrl);
-      photo.src = imageUrl;
-    });
-  };
-
   const handleGeneratePortrait = async () => {
     if (!state.sourceImage) {
       setState((prev) => ({ ...prev, error: '인물 사진을 먼저 등록해 주세요.' }));
@@ -207,14 +133,10 @@ export const App: React.FC = () => {
         throw new Error(data.error || '사진 생성 중 문제가 발생했습니다.');
       }
 
-      const finishedImage = state.selectedTheme === 'viking_beer'
-        ? await addBeerBranding(data.imageUrl)
-        : data.imageUrl;
-
       setState((prev) => ({
         ...prev,
-        generatedImage: finishedImage,
-        finalPrintImage: finishedImage,
+        generatedImage: data.imageUrl,
+        finalPrintImage: data.imageUrl,
         currentStep: 'result',
         todayCount: prev.todayCount + 1,
         error: null,
