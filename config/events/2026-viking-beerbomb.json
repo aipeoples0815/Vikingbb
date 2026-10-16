@@ -1,0 +1,14 @@
+{
+  "id": "2026-viking-beerbomb",
+  "eventName": "바이킹 비어밤",
+  "venue": "부산 북항",
+  "dates": ["2026-10-16", "2026-10-17"],
+  "dateLabel": "2026. 10. 16 — 17",
+  "brandName": "하하호호 스튜디오",
+  "slogan": "웃으면, 그 시절이 찍혀요",
+  "defaultMode": "free",
+  "price": {
+    "free": { "label": "오늘은 무료 체험이에요", "guide": "인화는 직원이 도와 드려요" },
+    "paid": { "label": "유료 촬영", "guide": "직원에게 결제하신 뒤 시작해요" }
+  }
+}
