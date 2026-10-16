@@ -101,6 +101,65 @@ export const App: React.FC = () => {
     }));
   };
 
+  // Apply consistent, exact Korean brand lettering after the AI portrait is generated.
+  // This intentionally affects only the craft-beer advertising theme.
+  const addBeerBranding = async (imageUrl: string): Promise<string> => {
+    return new Promise((resolve) => {
+      const photo = new Image();
+      photo.onload = () => {
+        try {
+          const canvas = document.createElement('canvas');
+          canvas.width = photo.naturalWidth;
+          canvas.height = photo.naturalHeight;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) { resolve(imageUrl); return; }
+          const sx = canvas.width / 1000;
+          const w = canvas.width;
+          const h = canvas.height;
+          ctx.drawImage(photo, 0, 0, w, h);
+          ctx.save();
+          const pad = 28 * sx;
+          const boxW = 420 * sx;
+          const boxH = 218 * sx;
+          const paintBox = (x: number, y: number, bw: number, bh: number) => {
+            ctx.fillStyle = 'rgba(10,20,35,0.82)';
+            ctx.beginPath();
+            ctx.roundRect(x, y, bw, bh, 18 * sx);
+            ctx.fill();
+          };
+          paintBox(pad, pad, boxW, boxH);
+          ctx.textAlign = 'left';
+          ctx.textBaseline = 'top';
+          ctx.fillStyle = '#fff';
+          ctx.font = `bold ${34 * sx}px Arial, sans-serif`;
+          ctx.fillText('VIKING CRAFT BEER', pad + 18 * sx, pad + 19 * sx);
+          ctx.fillStyle = '#ffce67';
+          ctx.font = `900 ${70 * sx}px "Malgun Gothic", "Apple SD Gothic Neo", sans-serif`;
+          ctx.fillText('조타카이', pad + 18 * sx, pad + 64 * sx);
+          ctx.font = `bold ${38 * sx}px Arial, sans-serif`;
+          ctx.fillText('JOTAKAI', pad + 20 * sx, pad + 158 * sx);
+          const label = '지금, 조타카이로 건배!';
+          ctx.font = `bold ${43 * sx}px "Malgun Gothic", "Apple SD Gothic Neo", sans-serif`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          const centerX = w / 2;
+          const centerY = h - 65 * sx;
+          const textWidth = ctx.measureText(label).width;
+          paintBox(centerX - textWidth / 2 - 20 * sx, centerY - 34 * sx, textWidth + 40 * sx, 68 * sx);
+          ctx.fillStyle = '#fff';
+          ctx.fillText(label, centerX, centerY);
+          ctx.restore();
+          resolve(canvas.toDataURL('image/jpeg', 0.94));
+        } catch (error) {
+          console.warn('Brand overlay could not be applied:', error);
+          resolve(imageUrl);
+        }
+      };
+      photo.onerror = () => resolve(imageUrl);
+      photo.src = imageUrl;
+    });
+  };
+
   const handleGeneratePortrait = async () => {
     if (!state.sourceImage) {
       setState((prev) => ({ ...prev, error: '인물 사진을 먼저 등록해 주세요.' }));
@@ -133,10 +192,14 @@ export const App: React.FC = () => {
         throw new Error(data.error || '사진 생성 중 문제가 발생했습니다.');
       }
 
+      const finishedImage = state.selectedTheme === 'viking_beer'
+        ? await addBeerBranding(data.imageUrl)
+        : data.imageUrl;
+
       setState((prev) => ({
         ...prev,
-        generatedImage: data.imageUrl,
-        finalPrintImage: data.imageUrl,
+        generatedImage: finishedImage,
+        finalPrintImage: finishedImage,
         currentStep: 'result',
         todayCount: prev.todayCount + 1,
         error: null,
